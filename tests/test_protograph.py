@@ -101,7 +101,7 @@ def _log_exception(path, log_errors, e):
     """ common logging """
     if log_errors:
         msg = json.dumps({'path': path, 'error': e.message})
-        print '>>>\n{}\n<<<'.format(msg)
+        # print '>>>\n{}\n<<<'.format(msg)
         logger.error(msg)
         # logger.exception(e)
     else:
@@ -147,7 +147,6 @@ def _validate_edge_file(protograph, path, log_errors=True):
                     k.split('.')[0]
                     assert _exists(edge.data[k]), "missing '{}' in {} {}".format(k, path, str(edge.data))  # noqa
                 except Exception as e:
-                    print e
                     error_count += 1
                     _log_exception(path, log_errors, e)
     return error_count
@@ -189,23 +188,23 @@ def _validate_project(protograph, project, path_match=r'.*'):
                 if node_type == 'Vertex':
                     error_count = _validate_vertex_file(protograph, p)
                 msg = json.dumps({'error_count': error_count, 'path': p})
-                print '>>>\n{}\n<<<'.format(msg)
+                # print '>>>\n{}\n<<<'.format(msg)
                 logger.info(msg)
                 project_error_count += error_count
             except Exception as e:
                 msg = json.dumps({'project': project, 'label': label,
                                   'node_type': node_type, 'error': e.message})
-                print '>>>\n{}\n<<<'.format(msg)
+                # print '>>>\n{}\n<<<'.format(msg)
                 logger.error(msg)
     except Exception as e:
         msg = json.dumps({'project': project, 'error': e.message})
-        print '>>>\n{}\n<<<'.format(msg)
+        # print '>>>\n{}\n<<<'.format(msg)
         logger.error(msg)
         project_error_count += 1
 
     msg = json.dumps({'project_error_count': project_error_count,
                       'project': project})
-    print '>>>\n{}\n<<<'.format(msg)
+    # print '>>>\n{}\n<<<'.format(msg)
     logger.info(msg)
     return project_error_count
 
@@ -251,4 +250,22 @@ def test_ctdd(protograph):
 def test_ensembl(protograph):
     """ assert ensembl data is ok """
     project_error_count = _validate_project(protograph, 'ensembl')
+    assert project_error_count == 0
+
+
+def test_go(protograph):
+    """ assert go data is ok """
+    project_error_count = _validate_project(protograph, 'go')
+    assert project_error_count == 0
+
+
+def test_mc3(protograph):
+    """ assert go data is ok """
+    project_error_count = _validate_project(protograph, 'mc3')
+    assert project_error_count == 0
+
+
+def test_tcga(protograph):
+    """ assert go data is ok """
+    project_error_count = _validate_project(protograph, 'tcga')
     assert project_error_count == 0
