@@ -7,14 +7,17 @@ import re
 import requests
 import yaml
 
+from attrdict import AttrDict
+from contextlib import contextmanager
 from os import listdir
 from os.path import isfile, join
-from attrdict import AttrDict
-
 
 logger = logging.getLogger(__name__)
 
 
+# *******
+# setup
+# *******
 @pytest.fixture
 def protograph():
     """ ensure we have protograph definitions, lable used as key """
@@ -36,6 +39,42 @@ def protograph():
         p = AttrDict(i)
         protograph_object[p.label] = p
     return protograph_object
+
+
+# *******
+# utilities
+# *******
+class ErrorCount(dict):
+    """ simple stateful counter"""
+    def __init__(self):
+        self['count'] = 0
+
+    def increment(self, val=1):
+        self['count'] += val
+
+    def val(self):
+        return self['count']
+
+
+@contextmanager
+def _logging(path, log_errors, error_count):
+    """ run code, log exception, return incremented error_count """
+    try:
+        yield
+    except Exception as e:
+        error_count.increment()
+        _log_exception(path, log_errors, e)
+
+
+def _log_exception(path, log_errors, e):
+    """ common logging """
+    if log_errors:
+        msg = json.dumps({'path': path, 'error': e.message})
+        # print '>>>\n{}\n<<<'.format(msg)
+        logger.error(msg)
+        # logger.exception(e)
+    else:
+        raise e
 
 
 def _get_paths(project):
@@ -97,59 +136,36 @@ def _exists(val):
     return True
 
 
-def _log_exception(path, log_errors, e):
-    """ common logging """
-    if log_errors:
-        msg = json.dumps({'path': path, 'error': e.message})
-        # print '>>>\n{}\n<<<'.format(msg)
-        logger.error(msg)
-        # logger.exception(e)
-    else:
-        raise e
-
-
 def _validate_edge_file(protograph, path, log_errors=True):
     """ validate edges, return error_count """
     edge_configs = _get_properties(protograph, path, 'edges')
     expected = set(['to', 'fromLabel', 'from',
                     'gid', 'toLabel', 'label'])
-    error_count = 0
+    error_count = ErrorCount()
     for edge in _load_records(path):
         # check it has all the expected keys
         assert expected.issubset(set(edge.keys())), 'incomplete {}'.format(path)  # noqa
         # check all keys have data
         for k in expected:
-            try:
+            with _logging(path, log_errors, error_count):
                 assert _exists(edge[k]), "missing '{}' in {} {}".format(k, path, edge)  # noqa
-            except Exception as e:
-                error_count += 1
-                _log_exception(path, log_errors, e)
         # check the edge has a configuration
-        try:
+        with _logging(path, log_errors, error_count):
             assert edge.label == edge_configs[edge.label].label, "missing config for {}".format(edge.label)  # noqa
-        except Exception as e:
-            error_count += 1
-            _log_exception(path, log_errors, e)
         edge_config = edge_configs[edge.label]
         # check that if data configured, the object exists
         if 'data' in edge_config:
-            try:
+            with _logging(path, log_errors, error_count):
                 assert edge.data, 'edge should have .data {}'.format(edge)
-            except Exception as e:
-                error_count += 1
-                _log_exception(path, log_errors, e)
             for k in edge_config.data.keys():
-                try:
+                with _logging(path, log_errors, error_count):
                     # filter out type field
                     key_fields = k.split('.')
                     k = key_fields[0]
                     _type = 'str'
                     k.split('.')[0]
                     assert _exists(edge.data[k]), "missing '{}' in {} {}".format(k, path, str(edge.data))  # noqa
-                except Exception as e:
-                    error_count += 1
-                    _log_exception(path, log_errors, e)
-    return error_count
+    return error_count.val()
 
 
 def _validate_vertex_file(protograph, path, log_errors=True):
@@ -157,23 +173,21 @@ def _validate_vertex_file(protograph, path, log_errors=True):
     # graph config
     vertexes = _get_properties(protograph, path, 'vertexes')
     expected = ['gid', 'data', 'label']
-    error_count = 0
+    error_count = ErrorCount()
     for vertex in _load_records(path):
         # ensure expected properties
         assert vertex.keys() == expected, 'incomplete {}'.format(path)
         for k in expected:
-            try:
+            with _logging(path, log_errors, error_count):
                 assert _exists(vertex[k]), "missing '{}' in {} {}".format(k, path, vertex)  # noqa
-            except Exception as e:
-                error_count += 1
-                _log_exception(path, log_errors, e)
     return error_count
 
 
-def _validate_project(protograph, project, path_match=r'.*'):
+def _validate_project(protograph, project, path_match=r'.*', log_errors=True):
     """ assert project data is ok """
     project_error_count = 0
-    try:
+    project_error_count = ErrorCount()
+    with _logging(project, log_errors, project_error_count):
         paths = _get_paths(project)
         assert paths
         path_match = re.compile(path_match)
@@ -181,32 +195,17 @@ def _validate_project(protograph, project, path_match=r'.*'):
             if not path_match.match(p):
                 continue
             project, label, node_type, extention = _get_file_parts(p)
-            try:
+            with _logging(p, log_errors, project_error_count):
                 error_count = 0
                 if node_type == 'Edge':
                     error_count = _validate_edge_file(protograph, p)
                 if node_type == 'Vertex':
                     error_count = _validate_vertex_file(protograph, p)
-                msg = json.dumps({'error_count': error_count, 'path': p})
-                # print '>>>\n{}\n<<<'.format(msg)
-                logger.info(msg)
-                project_error_count += error_count
-            except Exception as e:
-                msg = json.dumps({'project': project, 'label': label,
-                                  'node_type': node_type, 'error': e.message})
-                # print '>>>\n{}\n<<<'.format(msg)
-                logger.error(msg)
-    except Exception as e:
-        msg = json.dumps({'project': project, 'error': e.message})
-        # print '>>>\n{}\n<<<'.format(msg)
-        logger.error(msg)
-        project_error_count += 1
-
-    msg = json.dumps({'project_error_count': project_error_count,
+                project_error_count.increment(error_count)
+    msg = json.dumps({'project_error_count': project_error_count.val(),
                       'project': project})
-    # print '>>>\n{}\n<<<'.format(msg)
     logger.info(msg)
-    return project_error_count
+    return project_error_count.val()
 
 
 # *****************
@@ -229,12 +228,14 @@ def test_ccle(protograph):
     assert project_error_count == 0
 
 
+# test specific file
 def test_ccle_VariantAnnotation_Edge(protograph):
     """ assert ccle data is ok """
     project_error_count = _validate_project(protograph, 'ccle', path_match=r'.*VariantAnnotation.Edge.json')  # noqa
     assert project_error_count == 0
 
 
+# test specific file
 def test_ccle_GeneExpression_Edge(protograph):
     """ assert ccle data is ok """
     project_error_count = _validate_project(protograph, 'ccle', path_match=r'.*GeneExpression.Edge.json')  # noqa
