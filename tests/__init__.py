@@ -4,6 +4,7 @@
 import json
 import logging
 import os
+import re
 
 from contextlib import contextmanager
 from os import listdir
@@ -84,3 +85,15 @@ def _load_records(path):
             if c > sample_size and sample_size > -1:
                 break
             yield AttrDict(json.loads(line))
+
+
+def _records(project, path_match=r'.*', log_errors=True):
+    """ get records from all files that match path """
+    paths = _get_paths(project)
+    assert paths
+    path_match = re.compile(path_match)
+    for path in paths:
+        if not path_match.match(path):
+            continue
+        for record in _load_records(path):
+            yield record

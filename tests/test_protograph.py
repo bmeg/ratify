@@ -140,7 +140,11 @@ def _validate_vertex_file(protograph, path, log_errors=True):
                 assert _exists(vertex[k]), "missing '{}' in {} {}".format(k, path, vertex)  # noqa
         # check lable ok
         with _logging(path, log_errors, error_count):
-            assert vertex.label in vertexes.keys(), "'{}' not found in {}".format(vertex.label, vertexes.keys())  # noqa
+            assert vertex.label in vertexes.keys(), "vertex.label '{}' does not match yaml vertexes {}".format(vertex.label, vertexes.keys())  # noqa
+        # check gid ok
+        with _logging(path, log_errors, error_count):
+            for gid_part in vertex.gid.split(':'):
+                assert _exists(gid_part), "gid contains blanks '{}' in {}".format(vertex.gid, path)  # noqa
 
     return error_count.val()
 
