@@ -106,3 +106,4 @@ venv.bak/
 # our code
 
 tests/bmeg.protograph.yaml
+tests/generated
