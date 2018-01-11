@@ -8,6 +8,7 @@ import os
 from contextlib import contextmanager
 from os import listdir
 from os.path import isfile, join
+from attrdict import AttrDict
 
 logger = logging.getLogger(__package__)
 
@@ -71,3 +72,15 @@ def _load_lines(path):
             if c > sample_size and sample_size > -1:
                 break
             yield line
+
+
+def _load_records(path):
+    """ load records from file, break if SAMPLE_SIZE set """
+    sample_size = int(os.getenv('SAMPLE_SIZE', '-1'))
+    with open(path, 'r') as ins:
+        c = 0
+        for line in ins:
+            c += 1
+            if c > sample_size and sample_size > -1:
+                break
+            yield AttrDict(json.loads(line))

@@ -15,7 +15,8 @@ from contextlib import contextmanager
 from os import listdir
 from os.path import isfile, join
 # our common code
-from . import _get_paths, _get_file_parts, _logging, _load_lines, ErrorCount
+from . import _get_paths, _get_file_parts, _logging, _load_lines, ErrorCount, \
+              _load_records
 
 
 logger = logging.getLogger(__name__)
@@ -70,16 +71,16 @@ def _get_properties(protograph, path, node_type):
         return {}
 
 
-def _load_records(path):
-    """ load records from file, break if SAMPLE_SIZE set """
-    sample_size = int(os.getenv('SAMPLE_SIZE', '-1'))
-    with open(path, 'r') as ins:
-        c = 0
-        for line in ins:
-            c += 1
-            if c > sample_size and sample_size > -1:
-                break
-            yield AttrDict(json.loads(line))
+# def _load_records(path):
+#     """ load records from file, break if SAMPLE_SIZE set """
+#     sample_size = int(os.getenv('SAMPLE_SIZE', '-1'))
+#     with open(path, 'r') as ins:
+#         c = 0
+#         for line in ins:
+#             c += 1
+#             if c > sample_size and sample_size > -1:
+#                 break
+#             yield AttrDict(json.loads(line))
 
 
 def _exists(val):
@@ -137,7 +138,11 @@ def _validate_vertex_file(protograph, path, log_errors=True):
         for k in expected:
             with _logging(path, log_errors, error_count):
                 assert _exists(vertex[k]), "missing '{}' in {} {}".format(k, path, vertex)  # noqa
-    return error_count
+        # check lable ok
+        with _logging(path, log_errors, error_count):
+            assert vertex.label in vertexes.keys(), "'{}' not found in {}".format(vertex.label, vertexes.keys())  # noqa
+
+    return error_count.val()
 
 
 def _validate_project(protograph, project, path_match=r'.*', log_errors=True):
