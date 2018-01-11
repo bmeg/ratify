@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- encoding: utf-8 -*-
+
 import json
 import logging
 import os
@@ -11,6 +14,9 @@ from attrdict import AttrDict
 from contextlib import contextmanager
 from os import listdir
 from os.path import isfile, join
+# our common code
+from . import _get_paths, _get_file_parts, _logging, _load_lines, ErrorCount
+
 
 logger = logging.getLogger(__name__)
 
@@ -44,55 +50,6 @@ def protograph():
 # *******
 # utilities
 # *******
-class ErrorCount(dict):
-    """ simple stateful counter"""
-    def __init__(self):
-        self['count'] = 0
-
-    def increment(self, val=1):
-        self['count'] += val
-
-    def val(self):
-        return self['count']
-
-
-@contextmanager
-def _logging(path, log_errors, error_count):
-    """ run code, log exception, return incremented error_count """
-    try:
-        yield
-    except Exception as e:
-        error_count.increment()
-        _log_exception(path, log_errors, e)
-
-
-def _log_exception(path, log_errors, e):
-    """ common logging """
-    if log_errors:
-        msg = json.dumps({'path': path, 'error': e.message})
-        # print '>>>\n{}\n<<<'.format(msg)
-        logger.error(msg)
-        # logger.exception(e)
-    else:
-        raise e
-
-
-def _get_paths(project):
-    """ return any files in the path that contain name """
-    p = '{}/{}'.format(os.getenv('DATA_DIR', 'biostream/protograph'), project)
-    logger.debug('loading paths from {}'.format(p))
-    return [join(p, f) for f in listdir(p) if isfile(join(p, f))]
-
-
-def _get_file_parts(path):
-    """ return tuple of file parts. e.g.
-        ccle.Biosample.Vertex.json ~ (project, label, node_type, extention)
-        where node_type = Vertex | Edge; extention = json
-    """
-    basename = os.path.basename(path)
-    return basename.split('.')
-
-
 def _get_properties(protograph, path, node_type):
     """ get the protograph properties for the path, ignore 0 length files,
         indexed by label """
@@ -185,7 +142,6 @@ def _validate_vertex_file(protograph, path, log_errors=True):
 
 def _validate_project(protograph, project, path_match=r'.*', log_errors=True):
     """ assert project data is ok """
-    project_error_count = 0
     project_error_count = ErrorCount()
     with _logging(project, log_errors, project_error_count):
         paths = _get_paths(project)
