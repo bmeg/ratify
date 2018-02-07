@@ -31,7 +31,7 @@ from bmeg.variants_pb2 import *
 
 # our common code
 from . import _get_paths, _get_file_parts, _logging, _load_lines, ErrorCount, \
-    _get_dirs
+    _get_dirs, _load_records
 
 logger = logging.getLogger(__name__)
 
@@ -110,3 +110,63 @@ def test_g2p():
     """ assert g2p data is ok """
     project_error_count = _validate_project('g2p')
     assert project_error_count == 0
+
+
+def test_g2p_keys():
+    """ assert g2p data keys are ok """
+    genes = []
+    features = []
+    associations = []
+    environments = []
+    phenotypes = []
+    paths = _get_paths('g2p', prefix='biostream/biostream')
+    genes_path = None
+    features_path = None
+    associations_path = None
+    environments_path = None
+    phenotypes_path = None
+    for p in paths:
+        if p.endswith('Gene.json'):
+            genes_path = p
+        if p.endswith('Variant.json'):
+            features_path = p
+        if p.endswith('G2PAssociation.json'):
+            associations_path = p
+        if p.endswith('Compound.json'):
+            environments_path = p
+        if p.endswith('Phenotype.json'):
+            phenotypes_path = p
+    sys.stderr.write('\n*** checking g2p json files, this may take awhile.\n')
+    for gene in _load_records(genes_path):
+        assert gene.id not in genes
+        genes.append(gene.id)
+    # print 'no gene dups'
+    for feature in _load_records(features_path):
+        assert feature.id not in features
+        features.append(feature.id)
+    # print 'no feature dups'
+    for environment in _load_records(environments_path):
+        assert environment.id not in environments
+        environments.append(environment.id)
+    # print 'no environments dups'
+    for phenotype in _load_records(phenotypes_path):
+        assert phenotype.id not in phenotypes
+        phenotypes.append(phenotype.id)
+    # print 'no phenotypes dups'
+
+    for association in _load_records(associations_path):
+        assert association.id not in association
+        associations.append(association.id)
+        for feature_id in association.features:
+            assert feature_id in features
+        if 'genes' in association:
+            for gene_id in association.genes:
+                assert gene_id in genes
+        if 'environments' in association:
+            for environment_id in association.environments:
+                assert environment_id in environments
+        if 'phenotypes' in association:
+            for phenotype_id in association.phenotypes:
+                assert phenotype_id in phenotypes
+
+    print 'association:no dups genes/features/environments/phenotypes found.'
