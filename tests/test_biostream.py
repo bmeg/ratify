@@ -19,34 +19,19 @@ from os import listdir
 from os.path import isfile, join
 from google.protobuf import json_format
 
-# our generated code
-import tests.generated.ga4gh
-import tests.generated.bmeg
-sys.modules['ga4gh'] = sys.modules['tests.generated.ga4gh']  # noqa
-sys.modules['bmeg'] = sys.modules['tests.generated.bmeg']  # noqa
-
-from tests.generated.bmeg.clinical_pb2 import *
-from tests.generated.bmeg.cna_pb2 import *
-from tests.generated.bmeg.genome_pb2 import *
-from tests.generated.bmeg.nlp_pb2 import *
-from tests.generated.bmeg.pfam_pb2 import *
-from tests.generated.bmeg.phenotype_pb2 import *
-from tests.generated.bmeg.rna_pb2 import *
-
-
-from tests.generated.ga4gh.allele_annotations_pb2 import *
-from tests.generated.ga4gh.bio_metadata_pb2 import *
-from tests.generated.ga4gh.common_pb2 import *
-from tests.generated.ga4gh.genotype_phenotype_pb2 import *
-from tests.generated.ga4gh.metadata_pb2 import *
-from tests.generated.ga4gh.reads_pb2 import *
-from tests.generated.ga4gh.references_pb2 import *
-from tests.generated.ga4gh.rna_quantification_pb2 import *
-from tests.generated.ga4gh.sequence_annotations_pb2 import *
-from tests.generated.ga4gh.variants_pb2 import *
+# biostream-schema
+from bmeg.clinical_pb2 import *
+from bmeg.cna_pb2 import *
+from bmeg.genome_pb2 import *
+# from bmeg.nlp_pb2 import *
+# from bmeg.pfam_pb2 import *
+from bmeg.phenotype_pb2 import *
+from bmeg.rna_pb2 import *
+from bmeg.variants_pb2 import *
 
 # our common code
-from . import _get_paths, _get_file_parts, _logging, _load_lines, ErrorCount
+from . import _get_paths, _get_file_parts, _logging, _load_lines, ErrorCount, \
+    _get_dirs
 
 logger = logging.getLogger(__name__)
 
@@ -60,13 +45,13 @@ def _validate_project(project):
     path = 'biostream/biostream/{}'.format(project)
     with _logging(path, log_errors, project_error_count):
         paths = _get_paths(project, prefix='biostream/biostream')
-        assert len(paths) > 0
+        assert len(paths) > 0, 'expected paths for {}'.format(project)
         for path in paths:
             # get class name from file
             cls = _get_file_parts(path)[-2]
             error_count = ErrorCount()
-            for line in _load_lines(path):
-                with _logging(path, log_errors, error_count):
+            with _logging(path, log_errors, error_count):
+                for line in _load_lines(path):
                     # use eval to create object
                     try:
                         pb_obj = eval('{}()'.format(cls))
@@ -116,5 +101,12 @@ def test_mc3():
 
 def test_tcga():
     """ assert go data is ok """
-    project_error_count = _validate_project('tcga')
+    for dir_name in _get_dirs('tcga'):
+        project_error_count = _validate_project('tcga/{}'.format(dir_name))
+        assert project_error_count == 0
+
+
+def test_g2p():
+    """ assert g2p data is ok """
+    project_error_count = _validate_project('g2p')
     assert project_error_count == 0

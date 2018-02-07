@@ -8,7 +8,7 @@ import re
 
 from contextlib import contextmanager
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, isdir
 from attrdict import AttrDict
 
 logger = logging.getLogger(__package__)
@@ -39,10 +39,11 @@ def _logging(path, log_errors, error_count):
 def _log_exception(path, log_errors, e):
     """ common logging """
     if log_errors:
-        msg = json.dumps({'path': path, 'error': e.message})
+        msg = json.dumps({'path': path, 'error_type': e.__class__.__name__,
+                         'error': e.message})
         # print '>>>\n{}\n<<<'.format(msg)
         logger.error(msg)
-        # logger.exception(e)
+        logger.exception(e)
     else:
         raise e
 
@@ -52,6 +53,13 @@ def _get_paths(project, prefix='biostream/protograph'):
     p = '{}/{}/{}'.format(os.getenv('DATA_DIR'), prefix, project)
     logger.debug('loading paths from {}'.format(p))
     return [join(p, f) for f in listdir(p) if isfile(join(p, f))]
+
+
+def _get_dirs(project, prefix='biostream/protograph'):
+    """ return any dirs in the path (simple dir name)"""
+    p = '{}/{}/{}'.format(os.getenv('DATA_DIR'), prefix, project)
+    logger.debug('loading paths from {}'.format(p))
+    return [f for f in listdir(p) if isdir(join(p, f))]
 
 
 def _get_file_parts(path):
