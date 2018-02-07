@@ -16,7 +16,7 @@ from os import listdir
 from os.path import isfile, join
 # our common code
 from . import _get_paths, _get_file_parts, _logging, _load_lines, ErrorCount, \
-              _load_records
+              _load_records, _get_dirs
 
 
 logger = logging.getLogger(__name__)
@@ -69,18 +69,6 @@ def _get_properties(protograph, path, node_type):
         return labled
     else:
         return {}
-
-
-# def _load_records(path):
-#     """ load records from file, break if SAMPLE_SIZE set """
-#     sample_size = int(os.getenv('SAMPLE_SIZE', '-1'))
-#     with open(path, 'r') as ins:
-#         c = 0
-#         for line in ins:
-#             c += 1
-#             if c > sample_size and sample_size > -1:
-#                 break
-#             yield AttrDict(json.loads(line))
 
 
 def _exists(val):
@@ -154,7 +142,7 @@ def _validate_project(protograph, project, path_match=r'.*', log_errors=True):
     project_error_count = ErrorCount()
     with _logging(project, log_errors, project_error_count):
         paths = _get_paths(project)
-        assert paths
+        assert paths, 'expected paths for project {}'.format(project)
         path_match = re.compile(path_match)
         for p in paths:
             if not path_match.match(p):
@@ -233,5 +221,7 @@ def test_mc3(protograph):
 
 def test_tcga(protograph):
     """ assert go data is ok """
-    project_error_count = _validate_project(protograph, 'tcga')
-    assert project_error_count == 0
+    for dir_name in _get_dirs('tcga'):
+        project_error_count = _validate_project(protograph,
+                                                'tcga/{}'.format(dir_name))
+        assert project_error_count == 0
