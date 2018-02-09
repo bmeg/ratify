@@ -94,13 +94,13 @@ def test_go():
 
 
 def test_mc3():
-    """ assert go data is ok """
+    """ assert mc3 data is ok """
     project_error_count = _validate_project('mc3')
     assert project_error_count == 0
 
 
 def test_tcga():
-    """ assert go data is ok """
+    """ assert tcga data is ok """
     for dir_name in _get_dirs('tcga'):
         project_error_count = _validate_project('tcga/{}'.format(dir_name))
         assert project_error_count == 0
@@ -110,3 +110,17 @@ def test_g2p():
     """ assert g2p data is ok """
     project_error_count = _validate_project('g2p')
     assert project_error_count == 0
+
+
+def test_g2p_variants():
+    """ assert g2p variants is ok """
+    paths = _get_paths('g2p', prefix='biostream/biostream')
+    features_path = None
+    for p in paths:
+        if p.endswith('Variant.json'):
+            features_path = p
+    ref_alt_count = 0
+    for f in _load_records(features_path):
+        if 'reference_bases' in f or 'alternate_bases' in f:
+            ref_alt_count += 1
+    assert ref_alt_count > 0, 'expected some features w/ ref or alt'

@@ -13,6 +13,9 @@ from attrdict import AttrDict
 
 logger = logging.getLogger(__package__)
 
+assert os.getenv('DATA_DIR'), \
+    'Please set DATA_DIR env var (points to "biostream")'
+
 
 class ErrorCount(dict):
     """ simple stateful counter"""
