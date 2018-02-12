@@ -13,6 +13,9 @@ from attrdict import AttrDict
 
 logger = logging.getLogger(__package__)
 
+assert os.getenv('DATA_DIR'), \
+    'Please set DATA_DIR env var (points to "biostream")'
+
 
 class ErrorCount(dict):
     """ simple stateful counter"""
@@ -66,9 +69,16 @@ def _get_file_parts(path):
     """ return tuple of file parts. e.g.
         ccle.Biosample.Vertex.json ~ (project, label, node_type, extention)
         where node_type = Vertex | Edge; extention = json
+        Works from R->L so left keys are concatenated for project:
+        "tcga.TCGA-BRCA.DrugTherapy.Vertex.json" ~ project = "tcga.TCGA-BRCA"
     """
     basename = os.path.basename(path)
-    return basename.split('.')
+    file_parts = basename.split('.')
+    extention = file_parts[-1]
+    node_type = file_parts[-2]
+    label = file_parts[-3]
+    project = '.'.join(file_parts[:len(file_parts)-3])
+    return [project, label, node_type, extention]
 
 
 def _load_lines(path):
