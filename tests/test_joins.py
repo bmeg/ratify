@@ -107,8 +107,9 @@ def test_g2p_keys():
     for association in _load_records(associations_path):
         assert association.id not in association
         associations.append(association.id)
-        for feature_id in association.features:
-            assert feature_id in features
+        if 'features' in association:
+            for feature_id in association.features:
+                assert feature_id in features
         if 'genes' in association:
             for gene_id in association.genes:
                 assert gene_id in genes
