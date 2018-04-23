@@ -76,7 +76,12 @@ def _get_file_parts(path):
     file_parts = basename.split('.')
     extention = file_parts[-1]
     node_type = file_parts[-2]
-    label = file_parts[-3]
+    # if we are reading biostream files
+    if len(file_parts) > 2:
+        label = file_parts[-3]
+    else:
+        label = node_type
+        node_type = None
     project = '.'.join(file_parts[:len(file_parts)-3])
     return [project, label, node_type, extention]
 
