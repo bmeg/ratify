@@ -1,5 +1,7 @@
 attrdict==2.0.0
-pytest==3.0.6
+pytest==3.4
 requests==2.18.4
 protobuf==3.5.1
-biostream-schemas==0.0.6
+PyYAML==3.12
+# biostream-schemas==0.0.6
+git+https://github.com/biostream/schemas#egg=version_subpk&subdirectory=python

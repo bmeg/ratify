@@ -106,6 +106,9 @@ venv.bak/
 # mac
 .DS_Store
 
+# pytest
+.pytest_cache
+
 # our code
 
 tests/bmeg.protograph.yaml
