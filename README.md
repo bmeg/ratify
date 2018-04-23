@@ -29,20 +29,6 @@ You will need to run:
 pip install -r requirements.txt
 ```
 
-Please verify protoc installed:
-```
-$ protoc --version
-libprotoc 3.0.0
-# Use proto-generate.sh to generate the python code
-$ ./proto-generate.sh
-$ ls -1 tests/generated
-__init__.py
-bmeg
-ga4gh
-```
-
-
-
 ## run the tests
 
 ```
@@ -57,7 +43,11 @@ $ DATA_DIR=<download/mapped dir> SAMPLE_SIZE=<number of records to test> py.test
 
 The tests rely on the [yaml definitions of the graph](https://raw.githubusercontent.com/biostream/bmeg-etl/master/bmeg.protograph.yaml).
 The test will download the yaml file to tests/ on first execution.
+
 The tests will interrogate each file in the directory and compare it against the protograph definition.
+
+**You will want to delete tests/bmeg.protograph.yaml if you need to ensure up to date**
+
 
 Current checks include:
 * vertex: ensure ['gid', 'data', 'label'] are ! empty
@@ -86,7 +76,7 @@ The `test_joins` tests are manually setup and follow the following form:
     * validate edge to and from gids exist
 
 You may not want to set SAMPLE_SIZE in order to read all records.
-Currently the test validates `ensembl Transcript Vertex`
+Currently the test validates `ensembl Transcript Vertex` and `g2p joins`
 
 ## example output
 

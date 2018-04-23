@@ -8,10 +8,13 @@ import re
 
 from contextlib import contextmanager
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, isdir
 from attrdict import AttrDict
 
 logger = logging.getLogger(__package__)
+
+assert os.getenv('DATA_DIR'), \
+    'Please set DATA_DIR env var (points to "biostream")'
 
 
 class ErrorCount(dict):
@@ -39,10 +42,11 @@ def _logging(path, log_errors, error_count):
 def _log_exception(path, log_errors, e):
     """ common logging """
     if log_errors:
-        msg = json.dumps({'path': path, 'error': e.message})
+        msg = json.dumps({'path': path, 'error_type': e.__class__.__name__,
+                         'error': e.message})
         # print '>>>\n{}\n<<<'.format(msg)
         logger.error(msg)
-        # logger.exception(e)
+        logger.exception(e)
     else:
         raise e
 
@@ -54,13 +58,27 @@ def _get_paths(project, prefix='biostream/protograph'):
     return [join(p, f) for f in listdir(p) if isfile(join(p, f))]
 
 
+def _get_dirs(project, prefix='biostream/protograph'):
+    """ return any dirs in the path (simple dir name)"""
+    p = '{}/{}/{}'.format(os.getenv('DATA_DIR'), prefix, project)
+    logger.debug('loading paths from {}'.format(p))
+    return [f for f in listdir(p) if isdir(join(p, f))]
+
+
 def _get_file_parts(path):
     """ return tuple of file parts. e.g.
         ccle.Biosample.Vertex.json ~ (project, label, node_type, extention)
         where node_type = Vertex | Edge; extention = json
+        Works from R->L so left keys are concatenated for project:
+        "tcga.TCGA-BRCA.DrugTherapy.Vertex.json" ~ project = "tcga.TCGA-BRCA"
     """
     basename = os.path.basename(path)
-    return basename.split('.')
+    file_parts = basename.split('.')
+    extention = file_parts[-1]
+    node_type = file_parts[-2]
+    label = file_parts[-3]
+    project = '.'.join(file_parts[:len(file_parts)-3])
+    return [project, label, node_type, extention]
 
 
 def _load_lines(path):
