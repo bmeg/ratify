@@ -67,23 +67,23 @@ def _get_dirs(project, prefix='biostream/protograph'):
 
 def _get_file_parts(path):
     """ return tuple of file parts. e.g.
-        ccle.Biosample.Vertex.json ~ (project, label, node_type, extention)
-        where node_type = Vertex | Edge; extention = json
+        ccle.Biosample.Vertex.json ~ (project, label, extention)
         Works from R->L so left keys are concatenated for project:
-        "tcga.TCGA-BRCA.DrugTherapy.Vertex.json" ~ project = "tcga.TCGA-BRCA"
+        "tcga.TCGA-BRCA.DrugTherapyjson" ~ project = "tcga.TCGA-BRCA"
+        Note: we no longer support node_type
+        e.g. Vertex|Edge "tcga.TCGA-BRCA.DrugTherapy.Vertex.json"
     """
     basename = os.path.basename(path)
     file_parts = basename.split('.')
     extention = file_parts[-1]
-    node_type = file_parts[-2]
-    # if we are reading biostream files
-    if len(file_parts) > 2:
-        label = file_parts[-3]
+    project = None
+    if len(file_parts) == 3:
+        project = '.'.join(file_parts[:len(file_parts)-2])
+        label = file_parts[-2]
     else:
-        label = node_type
-        node_type = None
-    project = '.'.join(file_parts[:len(file_parts)-3])
-    return [project, label, node_type, extention]
+        project = '.'.join(file_parts[:len(file_parts)-3])
+        label = file_parts[-3]
+    return [project, label, extention]
 
 
 def _load_lines(path):

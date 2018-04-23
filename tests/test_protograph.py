@@ -54,7 +54,7 @@ def protograph():
 def _get_properties(protograph, path, node_type):
     """ get the protograph properties for the path, ignore 0 length files,
         indexed by label """
-    (project, label, node_type_ignore, extention) = _get_file_parts(path)
+    (project, label, extention) = _get_file_parts(path)
     logger.debug(path)
     assert protograph[label], '{} not found in protograph'.format(path)
     properties = protograph[label]
@@ -147,9 +147,12 @@ def _validate_project(protograph, project, path_match=r'.*', log_errors=True):
         for p in paths:
             if not path_match.match(p):
                 continue
-            project, label, node_type, extention = _get_file_parts(p)
+            project, label, extention = _get_file_parts(p)
             with _logging(p, log_errors, project_error_count):
                 error_count = 0
+                node_type = 'Vertex'
+                if 'Edge' in p:
+                    node_type = 'Edge'
                 if node_type == 'Edge':
                     error_count = _validate_edge_file(protograph, p)
                 if node_type == 'Vertex':
@@ -214,13 +217,13 @@ def test_go(protograph):
 
 
 def test_mc3(protograph):
-    """ assert go data is ok """
+    """ assert test_mc3 data is ok """
     project_error_count = _validate_project(protograph, 'mc3')
     assert project_error_count == 0
 
 
 def test_tcga(protograph):
-    """ assert go data is ok """
+    """ assert tcga data is ok """
     for dir_name in _get_dirs('tcga'):
         project_error_count = _validate_project(protograph,
                                                 'tcga/{}'.format(dir_name))
