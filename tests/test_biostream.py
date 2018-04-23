@@ -48,7 +48,9 @@ def _validate_project(project):
         assert len(paths) > 0, 'expected paths for {}'.format(project)
         for path in paths:
             # get class name from file
-            cls = _get_file_parts(path)[-2]
+            print path
+            print _get_file_parts(path)
+            cls = _get_file_parts(path)[-3]
             error_count = ErrorCount()
             with _logging(path, log_errors, error_count):
                 for line in _load_lines(path):
@@ -59,8 +61,8 @@ def _validate_project(project):
                                               ignore_unknown_fields=False)
                     except Exception as e:
                         raise ValueError(
-                            "pb parse e:{} cls:{} {}".format(e.message,
-                                                             cls, line)
+                            "pb parse e:{} cls:{} path:{} line:{}".format(
+                                e.message, cls, path, line)
                         )
             project_error_count.increment(error_count.val())
     return project_error_count.val()
@@ -121,6 +123,6 @@ def test_g2p_variants():
             features_path = p
     ref_alt_count = 0
     for f in _load_records(features_path):
-        if 'reference_bases' in f or 'alternate_bases' in f:
+        if 'referenceBases' in f or 'alternateBases' in f:
             ref_alt_count += 1
     assert ref_alt_count > 0, 'expected some features w/ ref or alt'
