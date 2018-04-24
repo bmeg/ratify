@@ -93,3 +93,19 @@ Each test will write a json formatted message to the standard python log output
 ## joins
 
 [DATA_DIR=/tmp/SWIFT  pytest  -s tests/test_joins.py](https://github.com/biostream/bmeg-etl/issues/57)
+
+
+
+## Dockerfile
+
+### build it
+
+```
+docker build . -t ratify
+```
+
+### run it
+
+```
+docker run -it --rm -v /tmp/SWIFT:/SWIFT -e DATA_DIR=/SWIFT -e SAMPLE_SIZE=10  ratify
+```

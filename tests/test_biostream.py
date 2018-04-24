@@ -33,6 +33,8 @@ from bmeg.variants_pb2 import *
 from . import _get_paths, _get_file_parts, _logging, _load_lines, ErrorCount, \
     _get_dirs, _load_records
 
+
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -48,9 +50,8 @@ def _validate_project(project):
         assert len(paths) > 0, 'expected paths for {}'.format(project)
         for path in paths:
             # get class name from file
-            print path
-            print _get_file_parts(path)
-            cls = _get_file_parts(path)[-3]
+            cls = _get_file_parts(path)[-2]
+            logger.info([project, path, cls])
             error_count = ErrorCount()
             with _logging(path, log_errors, error_count):
                 for line in _load_lines(path):
