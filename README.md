@@ -107,5 +107,12 @@ docker build . -t ratify
 ### run it
 
 ```
+# runs all tests
 docker run -it --rm -v /tmp/SWIFT:/SWIFT -e DATA_DIR=/SWIFT -e SAMPLE_SIZE=10  ratify
+
+# run individual tests
+
+docker run -it --rm -v /tmp/SWIFT:/SWIFT -e DATA_DIR=/SWIFT -e SAMPLE_SIZE=10  ratify  pytest  tests/test_biostream.py
+docker run -it --rm -v /tmp/SWIFT:/SWIFT -e DATA_DIR=/SWIFT -e SAMPLE_SIZE=10  ratify  pytest  tests/test_protograph.py
+
 ```

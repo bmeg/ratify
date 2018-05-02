@@ -82,7 +82,9 @@ def _get_file_parts(path):
         label = file_parts[-2]
     else:
         project = '.'.join(file_parts[:len(file_parts)-3])
-        label = file_parts[-3]
+        label = file_parts[-2]
+        if label in ['Vertex', 'Edge']:
+            label = file_parts[-3]
     return [project, label, extention]
 
 

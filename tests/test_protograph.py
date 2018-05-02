@@ -90,7 +90,7 @@ def _validate_edge_file(protograph, path, log_errors=True):
     error_count = ErrorCount()
     for edge in _load_records(path):
         # check it has all the expected keys
-        assert expected.issubset(set(edge.keys())), 'incomplete {}'.format(path)  # noqa
+        assert expected.issubset(set(edge.keys())), 'incomplete: {} does not contain keys {}'.format(path, expected)  # noqa
         # check all keys have data
         for k in expected:
             with _logging(path, log_errors, error_count):
@@ -122,7 +122,7 @@ def _validate_vertex_file(protograph, path, log_errors=True):
     error_count = ErrorCount()
     for vertex in _load_records(path):
         # ensure expected properties
-        assert vertex.keys() == expected, 'incomplete {}'.format(path)
+        assert vertex.keys() == expected, 'incomplete: {} does not contain keys {}'.format(path, expected)
         for k in expected:
             with _logging(path, log_errors, error_count):
                 assert _exists(vertex[k]), "missing '{}' in {} {}".format(k, path, vertex)  # noqa
