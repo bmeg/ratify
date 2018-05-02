@@ -50,8 +50,9 @@ def _validate_project(project):
         assert len(paths) > 0, 'expected paths for {}'.format(project)
         for path in paths:
             # get class name from file
+            logger.debug(['_get_file_parts', path,  _get_file_parts(path)])
             cls = _get_file_parts(path)[-2]
-            logger.info([project, path, cls])
+            logger.debug([project, path, cls])
             error_count = ErrorCount()
             with _logging(path, log_errors, error_count):
                 for line in _load_lines(path):
